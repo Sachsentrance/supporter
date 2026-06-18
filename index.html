@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sachsentrance – Supporter Datenbank</title>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #1a1a1a;
+    --surface2: #242424;
+    --border: #2e2e2e;
+    --accent: #c8ff00;
+    --text: #e8e8e8;
+    --muted: #777;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: Arial, sans-serif; min-height: 100vh; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  header h1 { font-size: 1.2rem; font-weight: 900; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .add-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 0.82rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.15s;
+  }
+  .add-btn:hover { background: #d9ff33; }
+  .sync-info { font-size: 0.72rem; color: var(--muted); }
+
+  .layout { display: flex; min-height: calc(100vh - 60px); }
+
+  .sidebar {
+    width: 230px;
+    min-width: 230px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 18px 14px;
+    overflow-y: auto;
+  }
+
+  .search-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 9px 12px;
+    color: var(--text);
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+    outline: none;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-input::placeholder { color: var(--muted); }
+
+  .filter-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+
+  .city-btns { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 20px; }
+  .city-btn { font-size: 0.75rem; padding: 4px 9px; border-radius: 4px; border: 1px solid var(--border); background: var(--surface2); cursor: pointer; color: #aaa; transition: all 0.12s; }
+  .city-btn:hover { border-color: #666; color: var(--text); }
+  .city-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+
+  .skill-rows { display: flex; flex-direction: column; gap: 2px; margin-bottom: 16px; }
+  .skill-row { display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 4px; cursor: pointer; transition: background 0.1s; }
+  .skill-row:hover { background: var(--surface2); }
+  .skill-row input { accent-color: var(--accent); cursor: pointer; }
+  .skill-row label { font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .skill-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  .reset-btn { width: 100%; padding: 7px; border: 1px solid var(--border); border-radius: 5px; background: transparent; font-size: 0.78rem; color: var(--muted); cursor: pointer; transition: all 0.12s; }
+  .reset-btn:hover { border-color: #c00; color: #c00; }
+
+  .content { flex: 1; padding: 20px 24px; overflow-y: auto; }
+  .result-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .result-count { font-size: 0.82rem; color: var(--muted); }
+  .result-count strong { color: var(--accent); font-size: 1rem; }
+
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; transition: border-color 0.12s; }
+  .card:hover { border-color: var(--accent); }
+
+  .card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+  .card-name { font-weight: 700; font-size: 0.92rem; }
+  .card-alias { font-weight: 400; font-size: 0.78rem; color: var(--muted); }
+  .city-badges { display: flex; flex-wrap: wrap; gap: 3px; }
+  .city-badge { font-size: 0.68rem; color: var(--muted); background: var(--surface2); padding: 2px 7px; border-radius: 10px; white-space: nowrap; }
+
+  .card-skills { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+  .skill-tag { font-size: 0.67rem; padding: 2px 7px; border-radius: 3px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+
+  .card-contacts { display: flex; flex-direction: column; gap: 3px; }
+  .contact-item { font-size: 0.78rem; color: var(--muted); }
+  .contact-item a { color: var(--accent); text-decoration: none; }
+  .contact-item a:hover { text-decoration: underline; }
+
+  .loading { grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 80px; color: var(--muted); font-size: 0.9rem; }
+  .spinner { width: 32px; height: 32px; border: 3px solid #222; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty { grid-column: 1/-1; text-align: center; padding: 60px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ Sachsentrance · Supporter</h1>
+  <div class="header-right">
+    <span class="sync-info" id="syncInfo">Lade…</span>
+    <a class="add-btn" href="form.html">+ Person eintragen</a>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <input class="search-input" id="searchInput" type="text" placeholder="Name suchen…" oninput="render()">
+    <div class="filter-label">Stadt</div>
+    <div class="city-btns" id="cityBtns"></div>
+    <div class="filter-label">Skills</div>
+    <div class="skill-rows" id="skillRows"></div>
+    <button class="reset-btn" onclick="resetFilters()">✕ Filter zurücksetzen</button>
+  </aside>
+
+  <div class="content">
+    <div class="result-bar">
+      <div class="result-count">Gefunden: <strong id="count">–</strong> Personen</div>
+    </div>
+    <div class="cards" id="cards">
+      <div class="loading"><div class="spinner"></div>Daten werden geladen…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── KONFIGURATION ──────────────────────────────────────────────────────────────
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzPwRfy-xHjRtU5Ma9IZY2B07QDLF5pKjSCrsxGCUNuQq9z7DXc1JzRPkv83Eihj-xYAQ/exec';
+// ─────────────────────────────────────────────────────────────────────────────
+
+const SKILLS = [
+  { id: 'Awareness',    label: 'Awareness',     color: '#7c3aed', bg: '#2d1f4a' },
+  { id: 'Kasse',        label: 'Kasse',          color: '#0891b2', bg: '#0c2a33' },
+  { id: 'Security',     label: 'Security',       color: '#dc2626', bg: '#3a1010' },
+  { id: 'Abendleitung', label: 'Abendleitung',   color: '#d97706', bg: '#332208' },
+  { id: 'Aufbau/Abbau', label: 'Aufbau/Abbau',   color: '#65a30d', bg: '#1e2c07' },
+  { id: 'DJ',           label: 'DJ',             color: '#c8ff00', bg: '#2a3300' },
+  { id: 'Licht',        label: 'Licht',          color: '#f59e0b', bg: '#332508' },
+  { id: 'Ton',          label: 'Ton',            color: '#06b6d4', bg: '#072830' },
+  { id: 'Grafik',       label: 'Grafik',         color: '#ec4899', bg: '#33102a' },
+  { id: 'Foto',         label: 'Foto',           color: '#8b5cf6', bg: '#261040' },
+  { id: 'Video',        label: 'Video/Film',      color: '#f97316', bg: '#331a00' },
+  { id: 'Producer',     label: 'Producer',        color: '#a855f7', bg: '#2d1040' },
+];
+const ALL_SKILL_IDS = SKILLS.map(s => s.id);
+const SKILL_MAP = Object.fromEntries(SKILLS.map(s => [s.id, s]));
+
+let people = [];
+let activeCity = 'alle';
+let activeSkills = new Set();
+
+// ── Load data from Apps Script ────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, { redirect: 'follow' });
+    const raw = await res.json();
+
+    // Map sheet rows → people objects
+    return raw
+      .filter(r => r['Name'] && r['Name'].trim())
+      .map(r => ({
+        name:   r['Name'].trim(),
+        alias:  (r['Alias'] || '').trim(),
+        cities: (r['Städte'] || '').toLowerCase() === 'überall'
+          ? ['überall']
+          : (r['Städte'] || '').split(',').map(c => c.trim()).filter(Boolean),
+        handy:  (r['Handy'] || '').replace(/\s+/g,''),
+        email:  (r['Email'] || '').trim(),
+        social: (r['Social'] || '').trim(),
+        skills: ALL_SKILL_IDS.filter(s => (r[s] || '').toLowerCase() === 'ja'),
+        notizen: (r['Notizen'] || '').trim(),
+      }));
+  } catch (err) {
+    document.getElementById('syncInfo').textContent = '⚠ Verbindungsfehler';
+    console.error(err);
+    return [];
+  }
+}
+
+// ── Build sidebar filters ─────────────────────────────────────────────────────
+function buildFilters() {
+  const allCities = ['alle', ...Array.from(new Set(people.flatMap(p => p.cities))).sort(), 'unbekannt'];
+
+  const cb = document.getElementById('cityBtns');
+  cb.innerHTML = '';
+  allCities.forEach(city => {
+    const btn = document.createElement('button');
+    btn.className = 'city-btn' + (city === activeCity ? ' active' : '');
+    btn.textContent = city === 'alle' ? 'Alle' : city;
+    btn.onclick = () => {
+      activeCity = city;
+      document.querySelectorAll('.city-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      render();
+    };
+    cb.appendChild(btn);
+  });
+
+  const sr = document.getElementById('skillRows');
+  sr.innerHTML = '';
+  SKILLS.forEach(skill => {
+    const div = document.createElement('div');
+    div.className = 'skill-row';
+    div.innerHTML = `<input type="checkbox" id="sk_${skill.id}" ${activeSkills.has(skill.id) ? 'checked' : ''} onchange="toggleSkill('${skill.id}')">
+      <label for="sk_${skill.id}"><span class="skill-dot" style="background:${skill.color}"></span>${skill.label}</label>`;
+    sr.appendChild(div);
+  });
+}
+
+function toggleSkill(id) {
+  if (activeSkills.has(id)) activeSkills.delete(id); else activeSkills.add(id);
+  render();
+}
+function resetFilters() {
+  activeCity = 'alle';
+  activeSkills.clear();
+  document.getElementById('searchInput').value = '';
+  buildFilters();
+  render();
+}
+
+function matches(p) {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  if (q && !p.name.toLowerCase().includes(q) && !p.alias.toLowerCase().includes(q)) return false;
+  if (activeCity === 'unbekannt' && p.cities.length > 0) return false;
+  if (activeCity !== 'alle' && activeCity !== 'unbekannt' && !p.cities.includes(activeCity) && !p.cities.includes('überall')) return false;
+  if (activeSkills.size > 0 && ![...activeSkills].every(s => p.skills.includes(s))) return false;
+  return true;
+}
+
+function render() {
+  const filtered = people.filter(matches);
+  document.getElementById('count').textContent = filtered.length;
+  const container = document.getElementById('cards');
+
+  if (!filtered.length) {
+    container.innerHTML = '<div class="empty">🔍 Niemand gefunden — Filter anpassen?</div>';
+    return;
+  }
+
+  const hasAll = p => ALL_SKILL_IDS.every(s => p.skills.includes(s));
+
+  container.innerHTML = filtered.map(p => {
+    const cityHtml = p.cities.length
+      ? p.cities.map(c => `<span class="city-badge">${c}</span>`).join('')
+      : '<span class="city-badge" style="font-style:italic">unbekannt</span>';
+
+    const skillHtml = hasAll(p)
+      ? `<span class="skill-tag" style="background:#1e2c07;color:#65a30d;border:1px solid #65a30d44">Flexibel · Alle Skills</span>`
+      : (p.skills.map(s => {
+          const cfg = SKILL_MAP[s];
+          return cfg ? `<span class="skill-tag" style="background:${cfg.bg};color:${cfg.color}">${cfg.label}</span>` : '';
+        }).join('') || '<span style="color:#555;font-size:0.75rem;font-style:italic">keine Skills</span>');
+
+    const contacts = [];
+    if (p.handy) contacts.push(`📱 <a href="tel:${p.handy}">${p.handy}</a>`);
+    if (p.email) contacts.push(`✉️ <a href="mailto:${p.email}">${p.email}</a>`);
+    if (p.social) {
+      const href = p.social.startsWith('http') ? p.social : `https://instagram.com/${p.social.replace(/^@/,'')}`;
+      contacts.push(`🔗 <a href="${href}" target="_blank">${p.social}</a>`);
+    }
+    const contactHtml = contacts.length
+      ? contacts.map(c => `<div class="contact-item">${c}</div>`).join('')
+      : '<div class="contact-item" style="color:#555;font-style:italic;font-size:0.75rem">keine Kontaktdaten</div>';
+
+    return `<div class="card">
+      <div class="card-header">
+        <div class="card-name">${p.name}${p.alias ? ` <span class="card-alias">(${p.alias})</span>` : ''}</div>
+        <div class="city-badges">${cityHtml}</div>
+      </div>
+      <div class="card-skills">${skillHtml}</div>
+      <div class="card-contacts">${contactHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(async () => {
+  people = await loadData();
+  const now = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('syncInfo').textContent = `${people.length} Personen · ${now}`;
+  buildFilters();
+  render();
+})();
+</script>
+</body>
+</html>
